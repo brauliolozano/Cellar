@@ -1,0 +1,716 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Personal Cellar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-column phone app — deep-blue header with cellar totals, grouped wine list, fixed bottom tab bar, bottom sheets for actions */
+:root{
+  --bg:#edf2f9; --surface:#ffffff; --ink:#0e1d38; --muted:#56688a; --line:#d5dfed;
+  --blue:#1d4c9e; --on-blue:#ffffff; --blue-soft:#dfe9fb; --blue-ink:#163d82;
+  --head-bg:#0f2f66; --head-bg2:#1b4a96; --head-fg:#f2f6ff; --head-muted:#a9c0e8;
+  --drink:#b23a4c; --drink-soft:#fbe7ea; --buy:#1b7556; --buy-soft:#e0f3ea;
+  --display:"Fraunces", Georgia, "Times New Roman", serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#08111f; --surface:#101d33; --ink:#e5edfa; --muted:#90a3c4; --line:#21355a;
+  --blue:#6c9fff; --on-blue:#061430; --blue-soft:#172d55; --blue-ink:#a9c6ff;
+  --head-bg:#0a1a38; --head-bg2:#123063; --head-fg:#eef4ff; --head-muted:#8ea9d8;
+  --drink:#ff8597; --drink-soft:#3a1720; --buy:#62d2a6; --buy-soft:#123327;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#08111f; --surface:#101d33; --ink:#e5edfa; --muted:#90a3c4; --line:#21355a;
+  --blue:#6c9fff; --on-blue:#061430; --blue-soft:#172d55; --blue-ink:#a9c6ff;
+  --head-bg:#0a1a38; --head-bg2:#123063; --head-fg:#eef4ff; --head-muted:#8ea9d8;
+  --drink:#ff8597; --drink-soft:#3a1720; --buy:#62d2a6; --buy-soft:#123327;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:720px;margin:0 auto}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+/* Header */
+.top{background:linear-gradient(160deg,var(--head-bg),var(--head-bg2));color:var(--head-fg)}
+.top .wrap{padding-block:20px 22px;display:grid;gap:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--head-muted)}
+.brand svg{width:22px;height:22px}
+.total{font-family:var(--display);font-weight:650;font-size:clamp(34px,9vw,46px);line-height:1;letter-spacing:-.01em;text-wrap:balance}
+.total small{font-family:var(--body);font-weight:500;font-size:16px;color:var(--head-muted);margin-left:6px;letter-spacing:0}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--head-muted)}
+.stats b{color:var(--head-fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+main .wrap{padding-block:16px;display:grid;gap:14px}
+.view-title{font-family:var(--display);font-weight:650;font-size:24px;margin:4px 0 0}
+.hint{color:var(--muted);font-size:13.5px;margin:0}
+
+/* Controls */
+.search{position:relative}
+.search input{width:100%;padding:12px 14px 12px 40px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--blue-soft);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;padding:9px 6px;border-radius:9px;font-weight:600;font-size:14px;color:var(--blue-ink)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(10,30,70,.15)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted)}
+.toggle input{width:18px;height:18px;accent-color:var(--blue)}
+
+/* Wine list */
+.group{display:grid;gap:8px}
+.group h2{margin:10px 0 0;display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--blue-ink);font-weight:700}
+.group h2 span{color:var(--muted);font-weight:500;letter-spacing:.02em;text-transform:none;font-size:12.5px}
+.wine{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 12px 12px}
+.wine.empty{opacity:.62}
+.seqno{grid-row:span 2;align-self:start;min-width:42px;height:42px;border-radius:11px;background:var(--blue-soft);color:var(--blue-ink);display:grid;place-items:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:14px}
+.thumb{grid-row:span 2;align-self:start;position:relative;width:52px;height:68px;border-radius:11px;overflow:hidden;border:0;padding:0;background:var(--blue-soft)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb span{position:absolute;left:3px;bottom:3px;background:var(--surface);color:var(--blue-ink);font-size:11px;font-weight:700;padding:0 5px;border-radius:6px;font-variant-numeric:tabular-nums}
+.photo-field{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.photo-prev{width:72px;height:96px;border-radius:12px;background:var(--blue-soft);border:1px dashed var(--line);display:grid;place-items:center;overflow:hidden;color:var(--blue-ink);flex:none}
+.photo-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-prev svg{width:28px;height:28px}
+.photo-field .btns{flex:1 1 160px}
+.bigphoto{width:100%;max-height:60vh;object-fit:contain;border-radius:14px;background:var(--blue-soft)}
+.winfo{min-width:0;background:none;border:0;padding:0;text-align:left;display:grid;gap:1px}
+.winfo h3{margin:0;font-size:16px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.winfo p{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.vint{font-family:var(--display);font-weight:500;font-size:13px;color:var(--blue-ink);background:var(--blue-soft);padding:1px 8px;border-radius:999px;justify-self:start;margin-top:4px;font-variant-numeric:tabular-nums}
+.stock{text-align:right;grid-row:1;grid-column:3}
+.stock b{display:block;font-family:var(--display);font-weight:650;font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
+.stock span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.acts{grid-column:2 / 4;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.chip{border:0;border-radius:999px;padding:7px 14px;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+.chip svg{width:15px;height:15px}
+.chip.drink{background:var(--drink-soft);color:var(--drink)}
+.chip.buy{background:var(--buy-soft);color:var(--buy)}
+.chip:disabled{opacity:.45;cursor:not-allowed}
+
+.empty-state{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:28px 20px;text-align:center;display:grid;gap:10px;justify-items:center}
+.empty-state h3{font-family:var(--display);font-weight:650;font-size:20px;margin:0}
+.empty-state p{margin:0;color:var(--muted);max-width:40ch}
+
+/* Forms */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px}
+.card h3{margin:0;font-size:16px;font-weight:700}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fields .full{grid-column:1 / -1}
+label.f{display:grid;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+label.f input,label.f select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:16px;font-weight:500;color:var(--ink)}
+.btn{border:0;border-radius:12px;padding:13px 16px;font-weight:700;font-size:15px;background:var(--blue);color:var(--on-blue);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{background:var(--blue-soft);color:var(--blue-ink)}
+.btn.danger{background:var(--drink-soft);color:var(--drink)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btns .btn{flex:1 1 140px}
+.err{color:var(--drink);font-size:13.5px;margin:0;font-weight:600}
+.stepper{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg);width:max-content}
+.stepper button{border:0;background:transparent;width:48px;height:46px;font-size:22px;font-weight:600;color:var(--blue-ink)}
+.stepper output{min-width:56px;text-align:center;font-family:var(--display);font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}
+
+/* History */
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:13.5px;color:var(--muted)}
+.chips button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+.moves{display:grid;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.move{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+.move:first-child{border-top:0}
+.mi{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+.mi svg{width:17px;height:17px}
+.move.purchase .mi{background:var(--buy-soft);color:var(--buy)}
+.move.consumption .mi{background:var(--drink-soft);color:var(--drink)}
+.move h4{margin:0;font-size:14.5px;font-weight:600;overflow-wrap:anywhere}
+.move p{margin:0;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.qty{font-family:var(--display);font-weight:650;font-size:18px;font-variant-numeric:tabular-nums}
+.move.purchase .qty{color:var(--buy)}
+.move.consumption .qty{color:var(--drink)}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--blue-soft);color:var(--blue-ink);font-weight:700;font-size:12px}
+
+.banner{background:var(--blue-soft);color:var(--blue-ink);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:500}
+
+/* Tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:5}
+.tabbar .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{border:0;background:none;padding:9px 4px 10px;display:grid;justify-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted)}
+.tabbar svg{width:23px;height:23px}
+.tabbar button[aria-current="page"]{color:var(--blue)}
+.tabbar .addbtn span.ico{background:var(--blue);color:var(--on-blue);border-radius:12px;width:40px;height:30px;display:grid;place-items:center}
+
+/* Sheet */
+.scrim{position:fixed;inset:0;background:rgba(5,15,35,.45);z-index:9}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-radius:20px 20px 0 0;max-height:88%;overflow:auto;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(5,15,35,.25)}
+.sheet .wrap{display:grid;gap:14px;padding-block:10px 4px}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:0 auto}
+.sheet h3{font-family:var(--display);font-weight:650;font-size:22px;margin:0;overflow-wrap:anywhere}
+.sheet .sub{color:var(--muted);margin:-8px 0 0;font-size:13.5px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px);text-align:center}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}}
+@media (min-width:560px){.wine{grid-template-columns:auto 1fr auto auto}.acts{grid-column:auto;grid-row:1 / span 2;grid-column-start:4;flex-direction:column}.stock{grid-row:1 / span 2;align-self:center}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4v4.5c0 1.2 2.5 2.4 2.5 5.5v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9C7.5 8.9 10 7.7 10 6.5z"/><path d="M8 14h8"/></svg>
+        Personal Cellar
+      </div>
+      <div class="total" id="total">0<small>bottles</small></div>
+      <div class="stats" id="stats"><span><b>0</b> wines</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="wrap" id="view-cellar">
+      <div class="banner" id="banner" hidden></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Search name, grape, country or year" aria-label="Search wines">
+      </div>
+      <div class="seg" role="group" aria-label="Group wines by">
+        <button type="button" data-group="seq" aria-pressed="true">Sequence</button>
+        <button type="button" data-group="harvest" aria-pressed="false">Harvest</button>
+        <button type="button" data-group="country" aria-pressed="false">Country</button>
+      </div>
+      <div class="row">
+        <label class="toggle"><input type="checkbox" id="showEmpty"> Show wines with 0 bottles</label>
+        <span class="hint" id="count"></span>
+      </div>
+      <div id="list"></div>
+    </section>
+
+    <section class="wrap" id="view-add" hidden>
+      <h2 class="view-title">New wine</h2>
+      <p class="hint">Add a wine to your cellar. If you bought bottles, enter them and the purchase is logged.</p>
+      <form class="card" id="addForm" novalidate>
+        <div class="fields">
+          <label class="f">Sequence<input id="a-seq" type="number" min="1" inputmode="numeric" required></label>
+          <label class="f">Harvest<input id="a-harvest" type="number" min="1800" max="2100" inputmode="numeric" placeholder="2019" required></label>
+          <label class="f full">Name<input id="a-name" type="text" placeholder="Château Montrose" autocomplete="off" required></label>
+          <label class="f">Country<input id="a-country" type="text" list="countries" placeholder="France" autocomplete="off" required></label>
+          <label class="f">Grape<input id="a-grape" type="text" list="grapes" placeholder="Cabernet Sauvignon" autocomplete="off" required></label>
+          <label class="f">Bottles purchased<input id="a-bottles" type="number" min="0" inputmode="numeric" value="1"></label>
+          <label class="f">Purchase date<input id="a-date" type="date"></label>
+          <div class="f full" style="display:grid;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted)">Picture
+            <div class="photo-field">
+              <div class="photo-prev" id="a-prev"></div>
+              <div class="btns">
+                <label class="btn ghost" for="a-photo" style="cursor:pointer" id="a-photo-label">Add picture</label>
+                <button class="btn ghost" type="button" id="a-photo-clear" hidden>Remove</button>
+              </div>
+              <input id="a-photo" type="file" accept="image/*" hidden>
+            </div>
+          </div>
+        </div>
+        <p class="err" id="addErr" hidden></p>
+        <button class="btn wide" type="submit">Add to cellar</button>
+      </form>
+    </section>
+
+    <section class="wrap" id="view-history" hidden>
+      <h2 class="view-title">History</h2>
+      <div class="chips" role="group" aria-label="Filter history">
+        <button type="button" data-type="all" aria-pressed="true">All</button>
+        <button type="button" data-type="purchase" aria-pressed="false">Purchases</button>
+        <button type="button" data-type="consumption" aria-pressed="false">Consumption</button>
+      </div>
+      <div class="stats" id="histStats" style="color:var(--muted)"></div>
+      <div id="moves"></div>
+    </section>
+
+    <section class="wrap" id="view-excel" hidden>
+      <h2 class="view-title">Excel</h2>
+      <p class="hint">Keep a copy of your cellar in a spreadsheet, or load wines from one.</p>
+      <div class="card">
+        <h3>Export to Excel</h3>
+        <p class="hint">Creates <b>Personal Cellar.xlsx</b> with two sheets: <i>Wines</i> (Sequence, Name, Harvest, Country, Grape, Bottles) and <i>Movements</i> (every purchase and consumption).</p>
+        <button class="btn" type="button" id="exportBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+          Export spreadsheet
+        </button>
+      </div>
+      <div class="card">
+        <h3>Import from Excel</h3>
+        <p class="hint">Choose an .xlsx or .csv with the columns Sequence, Name, Harvest, Country, Grape and Bottles. Rows whose sequence already exists update that wine; new sequences are added.</p>
+        <label class="btn ghost" for="importFile" style="cursor:pointer">Choose file</label>
+        <input id="importFile" type="file" accept=".xlsx,.xls,.csv" hidden>
+        <div id="importPreview"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Sections">
+    <div class="in">
+      <button type="button" data-view="cellar" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Cellar</button>
+      <button type="button" data-view="add" class="addbtn">
+        <span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>New wine</button>
+      <button type="button" data-view="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+      <button type="button" data-view="excel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 12l6 6M15 12l-6 6"/></svg>Excel</button>
+    </div>
+  </nav>
+
+  <datalist id="countries"></datalist>
+  <datalist id="grapes"></datalist>
+  <div class="scrim" id="scrim" hidden></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></div>
+  <div class="toast" id="toast" role="status" hidden></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+  const fmtDate = s => { try { return new Date(s + "T12:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}); } catch { return s; } };
+  const ICON_DRINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10l-1 7a4 4 0 0 1-8 0z"/><path d="M12 14v7M8 21h8"/></svg>';
+  const ICON_PHOTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>';
+  const ICON_BUY ='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+
+  const state = { wines: [], moves: [], group: "seq", q: "", showEmpty: false, histType: "all", view: "cellar", ready: false };
+  let db = null, assets = null, canWrite = true;
+
+  /* ---------- pictures: shrink on the device, store with the app ---------- */
+  const photoSrc = w => w.photoId ? "/_blob/" + w.photoId : (w.photoData || "");
+  function shrinkImage(file, maxSide) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => b ? resolve({ blob: b, canvas: c }) : reject(new Error("encode")), "image/jpeg", 0.82);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+      img.src = url;
+    });
+  }
+  // Returns the fields to store on the wine: {photoId} with app storage, {photoData} on this device only.
+  async function savePhoto(file) {
+    if (assets) {
+      const { blob } = await shrinkImage(file, 1200);
+      const r = await assets.upload(blob);
+      return { photoId: r.id, photoData: "" };
+    }
+    const { canvas } = await shrinkImage(file, 480);
+    return { photoId: "", photoData: canvas.toDataURL("image/jpeg", 0.7) };
+  }
+  function dropPhoto(w) { if (assets && w && w.photoId) assets.delete(w.photoId).catch(() => {}); }
+  function photoFailed(e) {
+    const c = e && e.code;
+    toast(c === "too_large" ? "That picture is too large. Try a smaller one." :
+      c === "invalid_request" || (e && /decode|encode/.test(e.message)) ? "That file isn't a picture we can read. Try a JPG or PNG." :
+      "Couldn't upload the picture. Try again.");
+  }
+
+  /* ---------- storage: shared db when available, this device otherwise ---------- */
+  const LOCAL_KEY = "personal-cellar-v1";
+  const local = {
+    load() { try { const d = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"); if (d) { state.wines = d.wines || []; state.moves = d.moves || []; } } catch {} },
+    save() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ wines: state.wines, moves: state.moves })); } catch {} }
+  };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  const store = {
+    async addWine(w) {
+      if (db) { const ref = await db.collection("wines").add(w); return ref.id; }
+      const id = uid(); state.wines.push({ id, ...w }); local.save(); render(); return id;
+    },
+    async updateWine(id, patch) {
+      if (db) return db.collection("wines").doc(id).update(patch);
+      Object.assign(state.wines.find(w => w.id === id) || {}, patch); local.save(); render();
+    },
+    async deleteWine(id) {
+      if (db) return db.collection("wines").doc(id).delete();
+      state.wines = state.wines.filter(w => w.id !== id); local.save(); render();
+    },
+    async addMove(m) {
+      if (db) return db.collection("moves").add(m);
+      state.moves.unshift({ id: uid(), ...m }); local.save(); render();
+    }
+  };
+
+  function writeFailed(e) {
+    if (e && e.code === "invalid_argument") { canWrite = false; toast("You can view this cellar, but only its owner can change it."); render(); }
+    else if (e && e.code === "quota_exceeded") toast("The cellar is full. Delete some old wines and try again.");
+    else toast("Couldn't save. Check your connection and try again.");
+  }
+
+  /* ---------- derived data ---------- */
+  const nextSeq = () => state.wines.reduce((m, w) => Math.max(m, Number(w.seq) || 0), 0) + 1;
+  const totals = () => {
+    const bottles = state.wines.reduce((s, w) => s + (Number(w.bottles) || 0), 0);
+    const inStock = state.wines.filter(w => w.bottles > 0);
+    const countries = new Set(inStock.map(w => w.country)).size;
+    const years = inStock.map(w => Number(w.harvest)).filter(Boolean);
+    return { bottles, wines: state.wines.length, inStock: inStock.length, countries, oldest: years.length ? Math.min(...years) : null };
+  };
+  const visibleWines = () => {
+    const q = state.q.trim().toLowerCase();
+    return state.wines.filter(w => (state.showEmpty || w.bottles > 0) &&
+      (!q || [w.name, w.grape, w.country, w.harvest, "#" + w.seq].join(" ").toLowerCase().includes(q)));
+  };
+
+  /* ---------- rendering ---------- */
+  function wineCard(w) {
+    const empty = !(w.bottles > 0);
+    return `<article class="wine${empty ? " empty" : ""}">
+      ${photoSrc(w)
+        ? `<button class="thumb" type="button" data-photo="${esc(w.id)}" aria-label="View picture of ${esc(w.name)}"><img src="${esc(photoSrc(w))}" alt="" loading="lazy"><span>#${esc(w.seq)}</span></button>`
+        : `<div class="seqno" aria-label="Sequence ${esc(w.seq)}">#${esc(w.seq)}</div>`}
+      <button class="winfo" type="button" data-edit="${esc(w.id)}" aria-label="Edit ${esc(w.name)}">
+        <h3>${esc(w.name)}</h3>
+        <p>${esc(w.grape)} · ${esc(w.country)}</p>
+        <span class="vint">${esc(w.harvest)}</span>
+      </button>
+      <div class="stock"><b>${Number(w.bottles) || 0}</b><span>${w.bottles == 1 ? "bottle" : "bottles"}</span></div>
+      <div class="acts">
+        <button class="chip drink" type="button" data-move="consumption" data-id="${esc(w.id)}" ${empty || !canWrite ? "disabled" : ""}>${ICON_DRINK}Drink</button>
+        <button class="chip buy" type="button" data-move="purchase" data-id="${esc(w.id)}" ${!canWrite ? "disabled" : ""}>${ICON_BUY}Buy</button>
+      </div>
+    </article>`;
+  }
+
+  function renderList() {
+    const list = $("#list");
+    const all = visibleWines();
+    $("#count").textContent = state.wines.length ? `${all.length} of ${state.wines.length} wines` : "";
+    if (!state.ready) { list.innerHTML = `<div class="empty-state"><p>Opening your cellar…</p></div>`; return; }
+    if (!state.wines.length) {
+      list.innerHTML = `<div class="empty-state">
+        <h3>Your cellar is empty</h3>
+        <p>Add your first wine with its sequence, name, harvest, country and grape, or import an Excel list you already keep.</p>
+        <div class="btns" style="width:100%;max-width:360px"><button class="btn" type="button" data-go="add">Add a wine</button><button class="btn ghost" type="button" data-go="excel">Import Excel</button></div>
+      </div>`; return;
+    }
+    if (!all.length) { list.innerHTML = `<div class="empty-state"><h3>No wines match</h3><p>Try another search, or turn on “Show wines with 0 bottles”.</p></div>`; return; }
+
+    const bySeq = (a, b) => (Number(a.seq) || 0) - (Number(b.seq) || 0);
+    let groups;
+    if (state.group === "seq") groups = [["All wines by sequence", all.sort(bySeq)]];
+    else {
+      const key = state.group;
+      const map = new Map();
+      all.forEach(w => { const k = String(w[key] || "Unknown"); if (!map.has(k)) map.set(k, []); map.get(k).push(w); });
+      groups = [...map.entries()].sort((a, b) => key === "harvest" ? Number(b[0]) - Number(a[0]) : a[0].localeCompare(b[0]))
+        .map(([k, ws]) => [k, ws.sort(bySeq)]);
+    }
+    list.innerHTML = groups.map(([label, ws]) => {
+      const b = ws.reduce((s, w) => s + (Number(w.bottles) || 0), 0);
+      return `<section class="group"><h2>${esc(label)}<span>${ws.length} ${ws.length === 1 ? "wine" : "wines"} · ${b} ${b === 1 ? "bottle" : "bottles"}</span></h2>${ws.map(wineCard).join("")}</section>`;
+    }).join("");
+  }
+
+  function renderHeader() {
+    const t = totals();
+    $("#total").innerHTML = `${t.bottles}<small>${t.bottles === 1 ? "bottle" : "bottles"}</small>`;
+    $("#stats").innerHTML = `<span><b>${t.inStock}</b> wines in stock</span><span><b>${t.countries}</b> ${t.countries === 1 ? "country" : "countries"}</span>` +
+      (t.oldest ? `<span>Oldest harvest <b>${t.oldest}</b></span>` : "");
+    const uniq = k => [...new Set(state.wines.map(w => w[k]).filter(Boolean))].sort();
+    $("#countries").innerHTML = uniq("country").map(c => `<option value="${esc(c)}">`).join("");
+    $("#grapes").innerHTML = uniq("grape").map(c => `<option value="${esc(c)}">`).join("");
+  }
+
+  function renderHistory() {
+    const ms = state.moves.filter(m => state.histType === "all" || m.type === state.histType)
+      .sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.createdAt || 0) - (a.createdAt || 0));
+    const sum = t => state.moves.filter(m => m.type === t).reduce((s, m) => s + (Number(m.qty) || 0), 0);
+    $("#histStats").innerHTML = `<span><b style="color:var(--buy)">${sum("purchase")}</b> bought</span><span><b style="color:var(--drink)">${sum("consumption")}</b> drunk</span>`;
+    if (!ms.length) { $("#moves").innerHTML = `<div class="empty-state"><h3>Nothing logged yet</h3><p>Tap <b>Buy</b> or <b>Drink</b> on a wine in your cellar and it appears here with its date.</p></div>`; return; }
+    $("#moves").innerHTML = `<div class="moves">${ms.map(m => `<div class="move ${m.type === "purchase" ? "purchase" : "consumption"}">
+      <div class="mi">${m.type === "purchase" ? ICON_BUY : ICON_DRINK}</div>
+      <div style="min-width:0"><h4>${esc(m.wineName)} <span style="color:var(--muted);font-weight:500">#${esc(m.seq)} · ${esc(m.harvest || "")}</span></h4>
+      <p>${m.type === "purchase" ? "Purchased" : "Consumed"} · ${esc(fmtDate(m.date))}${m.note ? " · " + esc(m.note) : ""}</p></div>
+      <div class="qty">${m.type === "purchase" ? "+" : "−"}${Number(m.qty) || 0}</div></div>`).join("")}</div>`;
+  }
+
+  function render() {
+    renderHeader(); renderList(); renderHistory();
+    $$("#view-add button[type=submit]").forEach(b => b.disabled = !canWrite);
+    if (!$("#a-seq").value || $("#a-seq").dataset.auto === "1") { $("#a-seq").value = nextSeq(); $("#a-seq").dataset.auto = "1"; }
+  }
+
+  function showView(v) {
+    state.view = v;
+    ["cellar", "add", "history", "excel"].forEach(n => $("#view-" + n).hidden = n !== v);
+    $$(".tabbar button").forEach(b => { if (b.dataset.view === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    window.scrollTo(0, 0);
+    try { localStorage.setItem("pc-view", v); } catch {}
+  }
+
+  let toastTimer;
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2800); }
+
+  /* ---------- bottom sheets ---------- */
+  function openSheet(html) { const s = $("#sheet"); s.innerHTML = `<div class="wrap"><div class="grab"></div>${html}</div>`; s.hidden = false; $("#scrim").hidden = false; setTimeout(() => s.querySelector("input,button.btn")?.focus(), 50); }
+  function closeSheet() { $("#sheet").hidden = true; $("#scrim").hidden = true; }
+
+  function openMove(id, type) {
+    const w = state.wines.find(x => x.id === id); if (!w) return;
+    const isBuy = type === "purchase";
+    const max = isBuy ? 999 : Number(w.bottles) || 0;
+    let qty = 1;
+    openSheet(`<h3 id="sheetTitle">${isBuy ? "New purchase" : "Log consumption"}</h3>
+      <p class="sub">${esc(w.name)} · ${esc(w.harvest)} · ${Number(w.bottles) || 0} in cellar</p>
+      <div class="row"><span style="font-weight:600">Bottles</span>
+        <div class="stepper"><button type="button" id="m-dec" aria-label="One less">−</button><output id="m-qty">1</output><button type="button" id="m-inc" aria-label="One more">+</button></div></div>
+      <div class="fields">
+        <label class="f">Date<input id="m-date" type="date" value="${today()}"></label>
+        <label class="f">${isBuy ? "Where / price" : "Occasion"}<input id="m-note" type="text" placeholder="${isBuy ? "Wine shop, €24" : "Dinner with friends"}"></label>
+      </div>
+      <p class="err" id="m-err" hidden></p>
+      <div class="btns"><button class="btn ghost" type="button" data-close>Cancel</button>
+        <button class="btn" type="button" id="m-save" style="background:var(${isBuy ? "--buy" : "--drink"});color:var(--surface)">${isBuy ? "Add bottles" : "Remove bottles"}</button></div>`);
+    const set = n => { qty = Math.max(1, Math.min(max, n)); $("#m-qty").textContent = qty; };
+    $("#m-dec").onclick = () => set(qty - 1);
+    $("#m-inc").onclick = () => set(qty + 1);
+    $("#m-save").onclick = async () => {
+      const cur = Number((state.wines.find(x => x.id === id) || w).bottles) || 0;
+      if (!isBuy && qty > cur) { const e = $("#m-err"); e.textContent = `Only ${cur} in the cellar.`; e.hidden = false; return; }
+      const btn = $("#m-save"); btn.disabled = true;
+      try {
+        await store.updateWine(id, { bottles: isBuy ? cur + qty : cur - qty });
+        await store.addMove({ wineId: id, wineName: w.name, seq: w.seq, harvest: w.harvest, type, qty, date: $("#m-date").value || today(), note: $("#m-note").value.trim(), createdAt: Date.now() });
+        closeSheet(); toast(isBuy ? `Added ${qty} ${qty === 1 ? "bottle" : "bottles"}` : `Enjoy! ${qty} ${qty === 1 ? "bottle" : "bottles"} logged`);
+      } catch (e) { btn.disabled = false; writeFailed(e); }
+    };
+  }
+
+  function openEdit(id) {
+    const w = state.wines.find(x => x.id === id); if (!w) return;
+    const ro = canWrite ? "" : "disabled";
+    openSheet(`<h3 id="sheetTitle">${esc(w.name)}</h3>
+      <div class="photo-field">
+        <div class="photo-prev" id="e-prev">${photoSrc(w) ? `<img src="${esc(photoSrc(w))}" alt="">` : ICON_PHOTO}</div>
+        ${canWrite ? `<div class="btns">
+          <label class="btn ghost" for="e-photo" style="cursor:pointer">${photoSrc(w) ? "Change picture" : "Add picture"}</label>
+          ${photoSrc(w) ? `<button class="btn ghost" type="button" id="e-photo-clear">Remove</button>` : ""}
+        </div><input id="e-photo" type="file" accept="image/*" hidden>` : ""}
+      </div>
+      <div class="fields">
+        <label class="f">Sequence<input id="e-seq" type="number" min="1" value="${esc(w.seq)}" ${ro}></label>
+        <label class="f">Harvest<input id="e-harvest" type="number" value="${esc(w.harvest)}" ${ro}></label>
+        <label class="f full">Name<input id="e-name" type="text" value="${esc(w.name)}" ${ro}></label>
+        <label class="f">Country<input id="e-country" type="text" list="countries" value="${esc(w.country)}" ${ro}></label>
+        <label class="f">Grape<input id="e-grape" type="text" list="grapes" value="${esc(w.grape)}" ${ro}></label>
+        <label class="f">Bottles in cellar<input id="e-bottles" type="number" min="0" value="${Number(w.bottles) || 0}" ${ro}></label>
+      </div>
+      <p class="hint">To record a purchase or a bottle you opened, use Buy or Drink so it shows in History. Changing the count here only corrects it.</p>
+      <p class="err" id="e-err" hidden></p>
+      ${canWrite ? `<div class="btns"><button class="btn danger" type="button" id="e-del">Delete wine</button><button class="btn" type="button" id="e-save">Save changes</button></div>` : `<button class="btn ghost wide" type="button" data-close>Close</button>`}`);
+    if (!canWrite) return;
+    let photoFile = null, removePhoto = false;
+    $("#e-photo").onchange = ev => {
+      const f = ev.target.files[0]; if (!f) return;
+      photoFile = f; removePhoto = false;
+      $("#e-prev").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="">`;
+    };
+    const clr = $("#e-photo-clear");
+    if (clr) clr.onclick = () => { photoFile = null; removePhoto = true; $("#e-prev").innerHTML = ICON_PHOTO; clr.hidden = true; };
+    let armed = false;
+    $("#e-del").onclick = async () => {
+      if (!armed) { armed = true; $("#e-del").textContent = "Tap again to delete"; return; }
+      try { await store.deleteWine(id); dropPhoto(w); closeSheet(); toast("Wine deleted"); } catch (e) { writeFailed(e); }
+    };
+    $("#e-save").onclick = async () => {
+      const v = readWine("e");
+      const err = validate(v, id); if (err) { const e = $("#e-err"); e.textContent = err; e.hidden = false; return; }
+      const btn = $("#e-save"); btn.disabled = true; btn.textContent = photoFile ? "Uploading picture…" : "Saving…";
+      let photo = {};
+      if (photoFile) { try { photo = await savePhoto(photoFile); } catch (e) { btn.disabled = false; btn.textContent = "Save changes"; photoFailed(e); return; } }
+      else if (removePhoto) photo = { photoId: "", photoData: "" };
+      try {
+        await store.updateWine(id, { ...v, ...photo, bottles: Math.max(0, parseInt($("#e-bottles").value, 10) || 0) });
+        if (photoFile || removePhoto) dropPhoto(w);
+        closeSheet(); toast("Saved");
+      } catch (e) { btn.disabled = false; btn.textContent = "Save changes"; writeFailed(e); }
+    };
+  }
+
+  function openPhoto(id) {
+    const w = state.wines.find(x => x.id === id); if (!w || !photoSrc(w)) return;
+    openSheet(`<h3 id="sheetTitle">${esc(w.name)}</h3>
+      <p class="sub">#${esc(w.seq)} · ${esc(w.harvest)} · ${esc(w.grape)} · ${esc(w.country)}</p>
+      <img class="bigphoto" src="${esc(photoSrc(w))}" alt="Picture of ${esc(w.name)}">
+      <div class="btns"><button class="btn ghost" type="button" data-close>Close</button><button class="btn" type="button" data-edit="${esc(w.id)}">Edit wine</button></div>`);
+  }
+
+  function readWine(p) {
+    return { seq: parseInt($(`#${p}-seq`).value, 10), name: $(`#${p}-name`).value.trim(), harvest: parseInt($(`#${p}-harvest`).value, 10),
+      country: $(`#${p}-country`).value.trim(), grape: $(`#${p}-grape`).value.trim() };
+  }
+  function validate(v, selfId) {
+    if (!(v.seq > 0)) return "Enter a sequence number of 1 or more.";
+    if (state.wines.some(w => Number(w.seq) === v.seq && w.id !== selfId)) return `Sequence ${v.seq} is already used. The next free one is ${nextSeq()}.`;
+    if (!v.name) return "Enter the wine's name.";
+    if (!(v.harvest >= 1800 && v.harvest <= 2100)) return "Enter the harvest year, for example 2019.";
+    if (!v.country) return "Enter the country.";
+    if (!v.grape) return "Enter the grape.";
+    return "";
+  }
+
+  /* ---------- Excel ---------- */
+  const COLS = { seq: ["sequence","seq","#","no","number"], name: ["name","wine"], harvest: ["harvest","vintage","year"],
+    country: ["country","origin"], grape: ["grape","grapes","variety","varietal"], bottles: ["bottles","qty","quantity","stock"] };
+  let pending = [];
+
+  async function exportXlsx() {
+    if (!window.XLSX) { toast("The spreadsheet tool didn't load. Reload the page and try again."); return; }
+    const wines = [...state.wines].sort((a, b) => a.seq - b.seq).map(w => ({ Sequence: w.seq, Name: w.name, Harvest: w.harvest, Country: w.country, Grape: w.grape, Bottles: Number(w.bottles) || 0 }));
+    const moves = [...state.moves].sort((a, b) => (a.date || "").localeCompare(b.date || "")).map(m => ({ Date: m.date, Type: m.type === "purchase" ? "Purchase" : "Consumption", Sequence: m.seq, Wine: m.wineName, Harvest: m.harvest, Quantity: m.qty, Note: m.note || "" }));
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.json_to_sheet(wines, { header: ["Sequence","Name","Harvest","Country","Grape","Bottles"] });
+    ws1["!cols"] = [{wch:10},{wch:34},{wch:9},{wch:14},{wch:22},{wch:9}];
+    const ws2 = XLSX.utils.json_to_sheet(moves, { header: ["Date","Type","Sequence","Wine","Harvest","Quantity","Note"] });
+    ws2["!cols"] = [{wch:12},{wch:13},{wch:10},{wch:34},{wch:9},{wch:9},{wch:28}];
+    XLSX.utils.book_append_sheet(wb, ws1, "Wines");
+    XLSX.utils.book_append_sheet(wb, ws2, "Movements");
+    const data = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const dl = window.claude?.use ? await window.claude.use("downloads") : null;
+    if (!dl) { toast("Saving files isn't available in this view. Open the page in claude.ai to export."); return; }
+    try { await dl.save({ filename: "Personal Cellar.xlsx", data }); toast("Spreadsheet saved"); }
+    catch (e) { if (e?.code !== "declined") toast(e?.code === "rate_limited" ? "A save is already waiting for your answer." : "Couldn't save the spreadsheet."); }
+  }
+
+  function parseImport(file) {
+    if (!window.XLSX) { toast("The spreadsheet tool didn't load. Reload the page and try again."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const wb = XLSX.read(new Uint8Array(reader.result), { type: "array" });
+        const sheet = wb.Sheets["Wines"] || wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        pending = rows.map(r => {
+          const o = {};
+          for (const [k, names] of Object.entries(COLS)) {
+            const col = Object.keys(r).find(c => names.includes(String(c).trim().toLowerCase()));
+            o[k] = col ? r[col] : "";
+          }
+          return { seq: parseInt(o.seq, 10), name: String(o.name).trim(), harvest: parseInt(o.harvest, 10), country: String(o.country).trim(), grape: String(o.grape).trim(), bottles: Math.max(0, parseInt(o.bottles, 10) || 0) };
+        }).filter(r => r.name);
+        let s = nextSeq();
+        pending.forEach(r => { if (!(r.seq > 0)) r.seq = s++; });
+        showPreview();
+      } catch { $("#importPreview").innerHTML = `<p class="err">That file couldn't be read. Save it as .xlsx or .csv and try again.</p>`; }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function showPreview() {
+    const box = $("#importPreview");
+    if (!pending.length) { box.innerHTML = `<p class="err">No wines found. Check that the first row has the column names Sequence, Name, Harvest, Country, Grape and Bottles.</p>`; return; }
+    const upd = pending.filter(r => state.wines.some(w => Number(w.seq) === r.seq)).length;
+    box.innerHTML = `<div style="display:grid;gap:12px">
+      <p class="hint"><b>${pending.length}</b> wines found: ${pending.length - upd} new, ${upd} will update existing sequences.</p>
+      <div class="table-wrap"><table><thead><tr><th>Seq</th><th>Name</th><th>Harvest</th><th>Country</th><th>Grape</th><th>Bottles</th></tr></thead>
+      <tbody>${pending.slice(0, 8).map(r => `<tr><td>${r.seq}</td><td>${esc(r.name)}</td><td>${esc(r.harvest || "")}</td><td>${esc(r.country)}</td><td>${esc(r.grape)}</td><td>${r.bottles}</td></tr>`).join("")}</tbody></table></div>
+      ${pending.length > 8 ? `<p class="hint">…and ${pending.length - 8} more.</p>` : ""}
+      <div class="btns"><button class="btn ghost" type="button" id="imp-cancel">Cancel</button><button class="btn" type="button" id="imp-go" ${canWrite ? "" : "disabled"}>Import ${pending.length} wines</button></div></div>`;
+    $("#imp-cancel").onclick = () => { pending = []; box.innerHTML = ""; $("#importFile").value = ""; };
+    $("#imp-go").onclick = async () => {
+      $("#imp-go").disabled = true;
+      try {
+        for (const r of pending) {
+          const ex = state.wines.find(w => Number(w.seq) === r.seq);
+          if (ex) await store.updateWine(ex.id, r); else await store.addWine({ ...r, createdAt: Date.now() });
+        }
+        toast(`Imported ${pending.length} wines`); pending = []; box.innerHTML = ""; $("#importFile").value = ""; showView("cellar");
+      } catch (e) { writeFailed(e); $("#imp-go").disabled = false; }
+    };
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener("click", e => {
+    const t = e.target.closest("button,[data-go]"); if (!t) { if (e.target.id === "scrim") closeSheet(); return; }
+    if (t.dataset.view) showView(t.dataset.view);
+    else if (t.dataset.go) showView(t.dataset.go);
+    else if (t.dataset.group) { state.group = t.dataset.group; $$(".seg button").forEach(b => b.setAttribute("aria-pressed", b === t)); renderList(); try { localStorage.setItem("pc-group", state.group); } catch {} }
+    else if (t.dataset.type) { state.histType = t.dataset.type; $$(".chips button").forEach(b => b.setAttribute("aria-pressed", b === t)); renderHistory(); }
+    else if (t.dataset.move) openMove(t.dataset.id, t.dataset.move);
+    else if (t.dataset.photo) openPhoto(t.dataset.photo);
+    else if (t.dataset.edit) openEdit(t.dataset.edit);
+    else if (t.hasAttribute("data-close")) closeSheet();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
+  $("#q").addEventListener("input", e => { state.q = e.target.value; renderList(); });
+  $("#showEmpty").addEventListener("change", e => { state.showEmpty = e.target.checked; renderList(); });
+  $("#a-seq").addEventListener("input", e => e.target.dataset.auto = "0");
+  $("#exportBtn").addEventListener("click", exportXlsx);
+  $("#importFile").addEventListener("change", e => { const f = e.target.files[0]; if (f) parseImport(f); });
+  $("#a-date").value = today();
+  let addPhoto = null;
+  const resetAddPhoto = () => { addPhoto = null; $("#a-photo").value = ""; $("#a-prev").innerHTML = ICON_PHOTO; $("#a-photo-clear").hidden = true; $("#a-photo-label").textContent = "Add picture"; };
+  resetAddPhoto();
+  $("#a-photo").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    addPhoto = f; $("#a-prev").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="">`;
+    $("#a-photo-clear").hidden = false; $("#a-photo-label").textContent = "Change picture";
+  });
+  $("#a-photo-clear").addEventListener("click", resetAddPhoto);
+  $("#addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const v = readWine("a"); const err = validate(v);
+    const box = $("#addErr");
+    if (err) { box.textContent = err; box.hidden = false; return; }
+    box.hidden = true;
+    const bottles = Math.max(0, parseInt($("#a-bottles").value, 10) || 0);
+    const submit = $("#addForm button[type=submit]");
+    let photo = {};
+    if (addPhoto) {
+      submit.disabled = true; submit.textContent = "Uploading picture…";
+      try { photo = await savePhoto(addPhoto); }
+      catch (e3) { submit.disabled = false; submit.textContent = "Add to cellar"; photoFailed(e3); return; }
+      submit.disabled = false; submit.textContent = "Add to cellar";
+    }
+    try {
+      const id = await store.addWine({ ...v, ...photo, bottles, createdAt: Date.now() });
+      if (bottles > 0) await store.addMove({ wineId: id, wineName: v.name, seq: v.seq, harvest: v.harvest, type: "purchase", qty: bottles, date: $("#a-date").value || today(), note: "Added to cellar", createdAt: Date.now() });
+      ["a-name","a-harvest","a-country","a-grape"].forEach(i => $("#" + i).value = "");
+      resetAddPhoto();
+      $("#a-bottles").value = 1; $("#a-seq").dataset.auto = "1"; $("#a-seq").value = v.seq + 1;
+      toast(`${v.name} added`); showView("cellar");
+    } catch (e2) { writeFailed(e2); }
+  });
+
+  /* ---------- start ---------- */
+  try { const g = localStorage.getItem("pc-group"); if (g) { state.group = g; $$(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.group === g)); } } catch {}
+  render();
+
+  (async () => {
+    const api = window.claude?.use ? window.claude : null;
+    db = api ? await api.use("db").catch(() => null) : null;
+    if (!db) {
+      local.load(); state.ready = true;
+      const b = $("#banner"); b.textContent = "Saving to your account isn't available here, so changes are kept on this device only. Export to Excel to keep a copy."; b.hidden = false;
+      render(); return;
+    }
+    assets = await api.use("assets").catch(() => null);
+    const user = await api.use("user").catch(() => null);
+    const w = user ? await user.can("data.write") : null;
+    if (w === false) canWrite = false;
+    let gotW = false, gotM = false;
+    db.collection("wines").onSnapshot(s => { state.wines = s.docs.map(d => ({ id: d.id, ...d.data() })); gotW = true; state.ready = gotW; render(); },
+      () => { state.ready = true; render(); });
+    db.collection("moves").orderBy("createdAt", "desc").limit(1000).onSnapshot(s => { state.moves = s.docs.map(d => ({ id: d.id, ...d.data() })); gotM = true; renderHistory(); renderHeader(); }, () => {});
+  })();
+})();
+</script>
+
+</body></html>
